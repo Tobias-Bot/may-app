@@ -6,7 +6,7 @@ import PeopleView from '../views/PeopleView.vue'
 import MiniAppPage from '../views/MiniAppPage.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory('/may-app/'),
   routes: [
     {
       path: '/',
