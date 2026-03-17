@@ -1,0 +1,107 @@
+/* Глобальные стили */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #ffffff;
+  color: #2a3b3b;
+  line-height: 1.6;
+  scroll-behavior: smooth;
+  min-height: 100vh;
+  transition: background-image 0.3s ease;
+}
+
+.content {
+  width: 100%;
+  max-width: 1800px; /* Увеличено для широких экранов */
+  margin: 0 auto;
+  padding: 2rem 16px 8rem 16px;
+  transition: padding 0.3s ease;
+}
+
+/* Адаптивные отступы */
+@media (min-width: 1440px) {
+  .content {
+    padding: 2rem 32px 8rem 32px; /* Увеличенные отступы на широких экранах */
+  }
+}
+
+@media (min-width: 1920px) {
+  .content {
+    padding: 2rem 64px 8rem 64px; /* Еще больше отступов на очень широких экранах */
+  }
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 350;
+  color: #1a3b3b;
+  margin-bottom: 2rem;
+  position: relative;
+  display: inline-block;
+}
+
+.page-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 80px;
+  height: 2px;
+  background: #1a3b3b;
+  opacity: 0.2;
+  transition: width 0.3s ease;
+}
+
+.page-title:hover::after {
+  width: 120px;
+}
+
+/* Анимации */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+}
+
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-view {
+  animation: fadeInPage 0.25s ease;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 1.5rem 16px 5rem 16px;
+  }
+  
+  .content.with-sidebar {
+    margin-left: 0;
+    max-width: 100%;
+  }
+  
+  .page-title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 1rem 16px 5rem 16px;
+  }
+  
+  .page-title {
+    font-size: 1.8rem;
+  }
+}

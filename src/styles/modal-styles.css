@@ -1,0 +1,219 @@
+/* Единые стили для всех модальных окон */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.modal-custom-title {
+  font-size: 1.4rem;
+  font-weight: 350;
+  color: #1a3b3b;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
+}
+
+.modal-input,
+.modal-textarea,
+.modal-item-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(26, 59, 59, 0.15);
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+}
+
+.modal-input:focus,
+.modal-textarea:focus,
+.modal-item-input:focus {
+  outline: none;
+  border-color: #1a3b3b;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(26, 59, 59, 0.1);
+}
+
+.modal-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.modal-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.modal-items-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.modal-items-list::-webkit-scrollbar-track {
+  background: rgba(26, 59, 59, 0.05);
+  border-radius: 4px;
+}
+
+.modal-items-list::-webkit-scrollbar-thumb {
+  background: rgba(26, 59, 59, 0.2);
+  border-radius: 4px;
+}
+
+.modal-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-item-input {
+  flex: 1;
+}
+
+.modal-item-remove {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid rgba(26, 59, 59, 0.15);
+  color: #b34141;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.modal-item-remove:hover {
+  opacity: 1;
+  background: rgba(180, 70, 70, 0.1);
+  transform: scale(1.1);
+}
+
+.modal-add-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(26, 59, 59, 0.05);
+  border: 1px dashed rgba(26, 59, 59, 0.25);
+  border-radius: 40px;
+  color: #1a3b3b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  width: 100%;
+}
+
+.modal-add-button:hover {
+  background: rgba(26, 59, 59, 0.1);
+  border-color: #1a3b3b;
+  transform: translateY(-2px);
+}
+
+.plus-icon {
+  font-size: 1.2rem;
+  font-weight: 300;
+}
+
+.modal-limit-note {
+  text-align: center;
+  padding: 0.75rem;
+  color: #8a9a9a;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.modal-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  background: rgba(26, 59, 59, 0.03);
+  border-radius: 20px;
+  padding: 1rem;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-row label {
+  min-width: 40px;
+  color: #5a6a6a;
+  font-size: 0.9rem;
+}
+
+.modal-number-input {
+  width: 80px;
+  padding: 0.5rem;
+  border: 1px solid rgba(26, 59, 59, 0.15);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.modal-number-input:focus {
+  outline: none;
+  border-color: #1a3b3b;
+}
+
+.modal-text-input {
+  width: 60px;
+  padding: 0.5rem;
+  border: 1px solid rgba(26, 59, 59, 0.15);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+.modal-text-input:focus {
+  outline: none;
+  border-color: #1a3b3b;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.modal-button {
+  padding: 0.7rem 1.5rem;
+  border-radius: 40px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.modal-button.primary {
+  background: #1a3b3b;
+  color: white;
+}
+
+.modal-button.primary:hover {
+  background: #2a4b4b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 59, 59, 0.2);
+}
+
+.modal-button.secondary {
+  background: transparent;
+  border: 1px solid rgba(26, 59, 59, 0.2);
+  color: #1a3b3b;
+}
+
+.modal-button.secondary:hover {
+  background: rgba(26, 59, 59, 0.05);
+}

@@ -1,0 +1,104 @@
+/* Запрещаем масштабирование и выделение текста */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Разрешаем ввод в полях формы */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: auto;
+  -khtml-user-select: auto;
+  -moz-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
+}
+
+/* Убираем дефолтные стили кнопок на iOS */
+button, 
+input[type="button"], 
+input[type="submit"], 
+input[type="reset"] {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+
+/* Убираем дефолтные стили полей на iOS */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+  font-size: 16px;
+}
+
+/* Убираем синее свечение при тапе на iOS */
+input:focus, 
+textarea:focus, 
+button:focus, 
+a:focus {
+  outline: none;
+}
+
+/* Убираем выделение при долгом тапе */
+img, a, button, div {
+  -webkit-touch-callout: none;
+}
+
+/* Добавляем безопасную зону для iPhone X и новее */
+body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  overflow-x: hidden;
+  width: 100%;
+  min-height: 100vh;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Адаптация контента под безопасную зону */
+.content {
+  padding: calc(2rem + env(safe-area-inset-top)) 1.5rem calc(6rem + env(safe-area-inset-bottom)) 1.5rem;
+}
+
+/* На мобильных учитываем безопасную зону */
+@media (max-width: 768px) {
+  .content {
+    padding: calc(1.5rem + env(safe-area-inset-top)) 1rem calc(5rem + env(safe-area-inset-bottom)) 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: calc(1rem + env(safe-area-inset-top)) 0.75rem calc(5rem + env(safe-area-inset-bottom)) 0.75rem;
+  }
+}
+
+/* Убираем подчеркивание у ссылок */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Плавная прокрутка */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Фикс для модальных окон на iOS */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+}
