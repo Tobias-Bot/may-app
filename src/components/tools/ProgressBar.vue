@@ -17,10 +17,8 @@
           @keyup.enter="saveTitle"
         />
       </div>
-      <button class="card-delete-button" @click="confirmDelete">✕</button>
     </div>
 
-    <!-- Текущее значение и прогресс-бар -->
     <div class="progress-display">
       <div class="current-value">
         <span class="value-number">{{ localData.current }}</span>
@@ -40,7 +38,6 @@
       </div>
     </div>
 
-    <!-- Кнопки управления -->
     <div class="progress-controls">
       <button class="control-button" @click="decrement" :disabled="localData.current <= localData.min">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -55,7 +52,6 @@
       </button>
     </div>
 
-    <!-- Статистика -->
     <div class="progress-stats">
       <span>Прогресс: {{ progressPercentage }}%</span>
       <span>Осталось: {{ remaining }} {{ localData.unit }}</span>
@@ -63,16 +59,6 @@
 
     <div class="card-footer">
       <span>{{ formatDate(localData.updatedAt) }}</span>
-    </div>
-
-    <div v-if="showDeleteConfirm" class="delete-confirm-overlay" @click.self="cancelDelete">
-      <div class="delete-confirm-dialog">
-        <p>Удалить прогресс?</p>
-        <div class="dialog-actions">
-          <button class="confirm-button" @click="deleteProgress">Удалить</button>
-          <button class="cancel-button" @click="cancelDelete">Отмена</button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -99,8 +85,6 @@ export default {
       current: props.data?.current || props.data?.min || 0,
       updatedAt: props.data?.updatedAt || props.data?.createdAt || new Date().toISOString()
     });
-    
-    const showDeleteConfirm = ref(false);
 
     const progressPercentage = computed(() => {
       const total = localData.value.max - localData.value.min;
@@ -166,30 +150,14 @@ export default {
       }
     };
 
-    const confirmDelete = () => { 
-      showDeleteConfirm.value = true; 
-    };
-    
-    const cancelDelete = () => { 
-      showDeleteConfirm.value = false; 
-    };
-    
-    const deleteProgress = () => { 
-      emit('delete', props.toolId); 
-    };
-
     return {
       localData,
-      showDeleteConfirm,
       progressPercentage,
       remaining,
       formatDate,
       saveTitle,
       increment,
-      decrement,
-      confirmDelete,
-      cancelDelete,
-      deleteProgress
+      decrement
     };
   }
 }
@@ -197,33 +165,6 @@ export default {
 
 <style scoped>
 @import '../../styles/card-styles.css';
-
-.progress-params {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(26, 59, 59, 0.04);
-  border-radius: 30px;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.85rem;
-  color: #5a6a6a;
-  flex-wrap: wrap;
-}
-
-.param {
-  font-weight: 500;
-  color: #1a3b3b;
-}
-
-.param-arrow {
-  color: #8a9a9a;
-  font-size: 0.9rem;
-}
-
-.param-step {
-  color: #8a9a9a;
-  margin-left: auto;
-}
 
 .progress-display {
   display: flex;

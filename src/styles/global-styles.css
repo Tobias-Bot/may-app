@@ -17,7 +17,7 @@ body {
 
 .content {
   width: 100%;
-  max-width: 1800px; /* Увеличено для широких экранов */
+  max-width: 1600px; /* Увеличено для широких экранов */
   margin: 0 auto;
   padding: 2rem 16px 8rem 16px;
   transition: padding 0.3s ease;

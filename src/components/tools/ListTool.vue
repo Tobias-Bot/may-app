@@ -16,7 +16,6 @@
           @keyup.enter="saveTitle"
         />
       </div>
-      <button class="card-delete-button" @click="confirmDelete">✕</button>
     </div>
 
     <div class="list-items-scroll">
@@ -49,16 +48,6 @@
     <div class="card-footer">
       <span>{{ formatDate(updatedAt) }}</span>
     </div>
-
-    <div v-if="showDeleteConfirm" class="delete-confirm-overlay" @click.self="cancelDelete">
-      <div class="delete-confirm-dialog">
-        <p>Удалить список?</p>
-        <div class="dialog-actions">
-          <button class="confirm-button" @click="deleteList">Удалить</button>
-          <button class="cancel-button" @click="cancelDelete">Отмена</button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -75,7 +64,6 @@ export default {
     const listTitle = ref(props.data?.title || '');
     const items = ref(props.data?.items ? JSON.parse(JSON.stringify(props.data.items)) : []);
     const updatedAt = ref(props.data?.updatedAt || props.data?.createdAt || new Date().toISOString());
-    const showDeleteConfirm = ref(false);
 
     const completedCount = computed(() => items.value.filter(i => i.completed).length);
 
@@ -127,32 +115,16 @@ export default {
       items.value.splice(index, 1); 
     };
 
-    const confirmDelete = () => { 
-      showDeleteConfirm.value = true; 
-    };
-    
-    const cancelDelete = () => { 
-      showDeleteConfirm.value = false; 
-    };
-    
-    const deleteList = () => { 
-      emit('delete', props.toolId); 
-    };
-
     return {
       listTitle,
       items,
       updatedAt,
-      showDeleteConfirm,
       completedCount,
       formatDate,
       saveTitle,
       saveItems,
       addItem,
-      removeItem,
-      confirmDelete,
-      cancelDelete,
-      deleteList
+      removeItem
     };
   }
 }
@@ -162,7 +134,7 @@ export default {
 @import '../../styles/card-styles.css';
 
 .list-items-scroll {
-  max-height: 200px;
+  max-height: 400px;
   overflow-y: auto;
   padding-right: 4px;
 }

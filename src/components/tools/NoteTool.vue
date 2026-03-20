@@ -17,7 +17,6 @@
           @keyup.enter="saveTitle" 
         />
       </div>
-      <button class="card-delete-button" @click="confirmDelete">✕</button>
     </div>
 
     <textarea 
@@ -29,21 +28,10 @@
       @blur="saveContent"
     ></textarea>
 
-    <!-- ImageUploader для фото -->
     <ImageUploader v-model="localData.image" @change="handleImageChange" />
 
     <div class="card-footer">
       <span>{{ formatDate(localData.updatedAt) }}</span>
-    </div>
-
-    <div v-if="showDeleteConfirm" class="delete-confirm-overlay" @click.self="cancelDelete">
-      <div class="delete-confirm-dialog">
-        <p>Удалить заметку?</p>
-        <div class="dialog-actions">
-          <button class="confirm-button" @click="deleteNote">Удалить</button>
-          <button class="cancel-button" @click="cancelDelete">Отмена</button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -60,13 +48,6 @@ export default {
   emits: ['update', 'delete'],
   
   setup(props, { emit }) {
-console.log('📦 [PhotoTool] initialized with props:', { 
-      toolId: props.toolId, 
-      hasData: !!props.data 
-    });
-
-    const showDeleteConfirm = ref(false);
-    
     const localData = ref({
       title: props.data?.title || '',
       content: props.data?.content || '',
@@ -118,39 +99,21 @@ console.log('📦 [PhotoTool] initialized with props:', {
       console.log('NoteTool: image changed', image ? 'has image' : 'no image');
     };
 
-    const confirmDelete = () => { 
-      showDeleteConfirm.value = true; 
-    };
-    
-    const cancelDelete = () => { 
-      showDeleteConfirm.value = false; 
-    };
-    
-    const deleteNote = () => { 
-      emit('delete', props.toolId); 
-    };
-
     return {
       localData,
-      showDeleteConfirm,
       contentLength,
       formatDate,
       saveTitle,
       saveContent,
-      handleImageChange,
-      confirmDelete,
-      cancelDelete,
-      deleteNote
+      handleImageChange
     };
   }
 }
 </script>
 
 <style scoped>
-/* Импортируем общие стили */
 @import '../../styles/card-styles.css';
 
-/* Специфичные для заметки стили */
 .content-input {
   width: 100%;
   font-size: 0.95rem;

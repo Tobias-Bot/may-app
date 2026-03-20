@@ -1,8 +1,17 @@
 <template>
   <div id="app">
-    <TopPanels 
+    <!-- Десктоп: вертикальные мини-приложения слева -->
+    <MiniAppsSidebar :visible="navVisible" />
+    
+    <!-- Мобильные: кнопка мини-приложений внизу слева -->
+    <MobileMiniAppsButton 
       :visible="navVisible"
       @open-settings="openSettings"
+    />
+    
+    <!-- Кнопки настроек и карандаш внизу справа -->
+    <BottomActionButtons 
+      :visible="navVisible"
       @open-note="openNoteTool"
       @open-list="openListTool"
       @open-photo="openPhotoTool"
@@ -224,7 +233,9 @@
 <script>
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import TopPanels from './components/TopPanels.vue';
+import MiniAppsSidebar from './components/MiniAppsSidebar.vue';
+import MobileMiniAppsButton from './components/MobileMiniAppsButton.vue';
+import BottomActionButtons from './components/BottomActionButtons.vue';
 import NavBar from './components/NavBar.vue'
 import FloatingActionButton from './components/FloatingActionButton.vue'
 import ModalWindow from './components/ModalWindow.vue'
@@ -237,12 +248,14 @@ import { initDB } from './db/db';
 import './styles/global-styles.css';
 import './styles/modal-styles.css';
 import './styles/settings-styles.css';
-import './styles/pwa-styles.css'; // Добавляем PWA стили
+import './styles/pwa-styles.css';
 
 export default {
   name: 'App',
   components: {
-    TopPanels,
+    MiniAppsSidebar,
+    MobileMiniAppsButton,
+    BottomActionButtons,
     NavBar,
     FloatingActionButton,
     ModalWindow,

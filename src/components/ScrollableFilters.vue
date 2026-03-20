@@ -130,8 +130,7 @@ export default {
 
 <style scoped>
 .scrollable-filters {
-  position: sticky;
-  top: 90px;
+  top: 0px;
   z-index: 900;
   background: transparent;
   padding: 0.75rem 0;

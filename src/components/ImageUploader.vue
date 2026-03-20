@@ -340,7 +340,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(26, 59, 59, 0.9);
+  background: black;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   z-index: 3000;

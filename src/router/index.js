@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import YaView from '../views/YaView.vue'
 import DomView from '../views/DomView.vue'
 import BlizkieView from '../views/BlizkieView.vue'
@@ -6,7 +6,7 @@ import PeopleView from '../views/PeopleView.vue'
 import MiniAppPage from '../views/MiniAppPage.vue'
 
 const router = createRouter({
-  history: createWebHistory('/may-app/'),
+  history: createWebHashHistory('/may-app/'),
   routes: [
     {
       path: '/',

@@ -11,24 +11,12 @@
         </span>
         <span class="photo-title">Фото</span>
       </div>
-      <button class="card-delete-button" @click="confirmDelete">✕</button>
     </div>
 
-    <!-- ImageUploader для фото -->
     <ImageUploader v-model="photoImage" @change="handleImageChange" />
 
     <div class="card-footer">
       <span>{{ formatDate(updatedAt) }}</span>
-    </div>
-
-    <div v-if="showDeleteConfirm" class="delete-confirm-overlay" @click.self="cancelDelete">
-      <div class="delete-confirm-dialog">
-        <p>Удалить фото?</p>
-        <div class="dialog-actions">
-          <button class="confirm-button" @click="deletePhoto">Удалить</button>
-          <button class="cancel-button" @click="cancelDelete">Отмена</button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -48,9 +36,6 @@ export default {
   emits: ['update', 'delete'],
   
   setup(props, { emit }) {
-    const showDeleteConfirm = ref(false);
-    
-    // Данные
     const photoImage = ref(props.data?.image || null);
     const createdAt = ref(props.data?.createdAt || new Date().toISOString());
     const updatedAt = ref(props.data?.updatedAt || props.data?.createdAt || new Date().toISOString());
@@ -64,7 +49,6 @@ export default {
       return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
     };
 
-    // Следим за изменением изображения
     watch(photoImage, (newImage) => {
       updatedAt.value = new Date().toISOString();
       
@@ -81,27 +65,11 @@ export default {
       // photoImage уже обновится через v-model
     };
 
-    const confirmDelete = () => { 
-      showDeleteConfirm.value = true; 
-    };
-    
-    const cancelDelete = () => { 
-      showDeleteConfirm.value = false; 
-    };
-    
-    const deletePhoto = () => { 
-      emit('delete', props.toolId); 
-    };
-
     return {
       photoImage,
       updatedAt,
-      showDeleteConfirm,
       formatDate,
-      handleImageChange,
-      confirmDelete,
-      cancelDelete,
-      deletePhoto
+      handleImageChange
     };
   }
 }

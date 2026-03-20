@@ -17,10 +17,8 @@
           @keyup.enter="saveTitle"
         />
       </div>
-      <button class="card-delete-button" @click="confirmDelete">✕</button>
     </div>
 
-    <!-- Дата и время события -->
     <div class="timer-datetime">
       <div class="datetime-inputs">
         <div class="input-group">
@@ -46,7 +44,6 @@
       </div>
     </div>
 
-    <!-- Отображение таймера -->
     <div class="timer-display" :class="{ expired: isExpired }">
       <div v-if="isExpired" class="expired-message">
         <span class="expired-icon">⏰</span>
@@ -75,23 +72,12 @@
       </div>
     </div>
 
-    <!-- Прогресс-бар -->
     <div class="progress-container">
       <div class="progress-bar" :style="{ width: `${progressPercentage}%` }"></div>
     </div>
 
     <div class="card-footer">
       <span>{{ formatDate(localData.updatedAt) }}</span>
-    </div>
-
-    <div v-if="showDeleteConfirm" class="delete-confirm-overlay" @click.self="cancelDelete">
-      <div class="delete-confirm-dialog">
-        <p>Удалить таймер?</p>
-        <div class="dialog-actions">
-          <button class="confirm-button" @click="deleteTimer">Удалить</button>
-          <button class="cancel-button" @click="cancelDelete">Отмена</button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -109,11 +95,9 @@ export default {
   emits: ['update', 'delete'],
   
   setup(props, { emit }) {
-    const showDeleteConfirm = ref(false);
     const currentTime = ref(Date.now());
     let timerInterval = null;
 
-    // Текущая дата для атрибута min
     const todayDate = computed(() => {
       const today = new Date();
       const year = today.getFullYear();
@@ -122,7 +106,6 @@ export default {
       return `${year}-${month}-${day}`;
     });
 
-    // Локальные данные
     const localData = ref({
       title: props.data?.title || '',
       date: props.data?.date || '',
@@ -130,7 +113,6 @@ export default {
       updatedAt: props.data?.updatedAt || props.data?.createdAt || new Date().toISOString()
     });
 
-    // Вычисляем целевую дату
     const targetDate = computed(() => {
       if (!localData.value.date) return null;
       const [year, month, day] = localData.value.date.split('-').map(Number);
@@ -138,25 +120,21 @@ export default {
       return new Date(year, month - 1, day, hours, minutes, seconds);
     });
 
-    // Проверяем, истекло ли время
     const isExpired = computed(() => {
       if (!targetDate.value) return false;
       return currentTime.value >= targetDate.value.getTime();
     });
 
-    // Вычисляем оставшееся время
     const timeLeft = computed(() => {
       if (!targetDate.value || isExpired.value) return 0;
       return Math.max(0, targetDate.value.getTime() - currentTime.value);
     });
 
-    // Дни, часы, минуты, секунды
     const days = computed(() => Math.floor(timeLeft.value / (1000 * 60 * 60 * 24)));
     const hours = computed(() => Math.floor((timeLeft.value % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
     const minutes = computed(() => Math.floor((timeLeft.value % (1000 * 60 * 60)) / (1000 * 60)));
     const seconds = computed(() => Math.floor((timeLeft.value % (1000 * 60)) / 1000));
 
-    // Склонение слова "день"
     const getDaysLabel = computed(() => {
       const d = days.value;
       if (d % 10 === 1 && d % 100 !== 11) return 'день';
@@ -164,15 +142,12 @@ export default {
       return 'дней';
     });
 
-    // Прогресс (если есть дата)
     const progressPercentage = computed(() => {
       if (!targetDate.value) return 0;
       const now = Date.now();
       const target = targetDate.value.getTime();
       if (now >= target) return 100;
       
-      // Для прогресса используем относительное время
-      // Берем диапазон от создания до цели (макс 30 дней)
       const createdAt = new Date(localData.value.updatedAt || Date.now()).getTime();
       const total = Math.min(target - createdAt, 30 * 24 * 60 * 60 * 1000);
       const elapsed = now - createdAt;
@@ -188,12 +163,10 @@ export default {
       return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
     };
 
-    // Форматирование времени для отображения с ведущими нулями
     const formatTimeValue = (value) => {
       return String(value).padStart(2, '0');
     };
 
-    // Сохранение изменений
     const getCleanData = () => {
       return {
         title: localData.value.title,
@@ -216,7 +189,6 @@ export default {
     const saveTitle = debouncedSave;
     const saveDateTime = debouncedSave;
 
-    // Обновление текущего времени каждую секунду
     const startTimer = () => {
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
@@ -224,38 +196,22 @@ export default {
       }, 1000);
     };
 
-    // Запускаем таймер при монтировании
     onMounted(() => {
       startTimer();
     });
 
-    // Очищаем интервал при размонтировании
     onUnmounted(() => {
       if (timerInterval) {
         clearInterval(timerInterval);
       }
     });
 
-    // Следим за изменениями данных
     watch(localData, () => {
       debouncedSave();
     }, { deep: true });
 
-    const confirmDelete = () => { 
-      showDeleteConfirm.value = true; 
-    };
-    
-    const cancelDelete = () => { 
-      showDeleteConfirm.value = false; 
-    };
-    
-    const deleteTimer = () => { 
-      emit('delete', props.toolId); 
-    };
-
     return {
       localData,
-      showDeleteConfirm,
       todayDate,
       isExpired,
       days: computed(() => formatTimeValue(days.value)),
@@ -266,10 +222,7 @@ export default {
       progressPercentage,
       formatDate,
       saveTitle,
-      saveDateTime,
-      confirmDelete,
-      cancelDelete,
-      deleteTimer
+      saveDateTime
     };
   }
 }

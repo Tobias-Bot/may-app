@@ -22,44 +22,44 @@
         :gap="16"
       >
         <template v-for="tool in filteredTools" :key="tool.id" #[`item-${tool.id}`]>
-          <div class="grid-item" :class="{ 'wide': tool.type === 'photo' }">
-            <NoteTool 
-              v-if="tool.type === 'note'" 
-              :toolId="tool.id" 
-              :data="tool.data" 
-              @delete="deleteTool" 
-              @update="updateTool" 
-            />
-            <ListTool 
-              v-else-if="tool.type === 'list'" 
-              :toolId="tool.id" 
-              :data="tool.data" 
-              @delete="deleteTool" 
-              @update="updateTool" 
-            />
-            <PhotoTool 
-              v-else-if="tool.type === 'photo'" 
-              :toolId="tool.id" 
-              :data="tool.data" 
-              @update="updateTool" 
-              @delete="deleteTool" 
-            />
-            <ProgressBar 
-              v-else-if="tool.type === 'progress'" 
-              :toolId="tool.id" 
-              :data="tool.data" 
-              @delete="deleteTool" 
-              @update="updateTool" 
-            />
-            <TimerTool 
-              v-else-if="tool.type === 'timer'" 
-              :toolId="tool.id" 
-              :data="tool.data" 
-              @delete="deleteTool" 
-              @update="updateTool" 
-            />
-          </div>
-        </template>
+  <div class="grid-item" :class="{ 'wide': tool.type === 'photo' }">
+    <CardWrapper 
+      :hide-expand="tool.type === 'photo'"
+      @delete="deleteTool(tool.id)"
+    >
+      <NoteTool 
+        v-if="tool.type === 'note'" 
+        :toolId="tool.id" 
+        :data="tool.data" 
+        @update="updateTool" 
+      />
+      <ListTool 
+        v-else-if="tool.type === 'list'" 
+        :toolId="tool.id" 
+        :data="tool.data" 
+        @update="updateTool" 
+      />
+      <PhotoTool 
+        v-else-if="tool.type === 'photo'" 
+        :toolId="tool.id" 
+        :data="tool.data" 
+        @update="updateTool" 
+      />
+      <ProgressBar 
+        v-else-if="tool.type === 'progress'" 
+        :toolId="tool.id" 
+        :data="tool.data" 
+        @update="updateTool" 
+      />
+      <TimerTool 
+        v-else-if="tool.type === 'timer'" 
+        :toolId="tool.id" 
+        :data="tool.data" 
+        @update="updateTool" 
+      />
+    </CardWrapper>
+  </div>
+</template>
       </PinterestGrid>
     </div>
     <div v-else class="empty-state">
@@ -71,6 +71,7 @@
 <script>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import ScrollableFilters from '../components/ScrollableFilters.vue';
+import CardWrapper from '../components/CardWrapper.vue';
 import NoteTool from '../components/tools/NoteTool.vue';
 import ListTool from '../components/tools/ListTool.vue';
 import PhotoTool from '../components/tools/PhotoTool.vue';
@@ -83,6 +84,7 @@ export default {
   name: 'CategoryPage',
   components: {
     ScrollableFilters,
+    CardWrapper,
     NoteTool,
     ListTool,
     PhotoTool,
@@ -112,7 +114,7 @@ export default {
       { label: 'Списки', value: 'list' },
       { label: 'Фото', value: 'photo' },
       { label: 'Прогресс', value: 'progress' },
-      { label: 'Таймеры', value: 'timer' } // Добавлен фильтр для таймеров
+      { label: 'Таймеры', value: 'timer' }
     ];
 
     const filteredTools = computed(() => {
@@ -167,27 +169,10 @@ export default {
     });
     
     const deleteTool = (toolId) => toolsStore.deleteTool(props.page, toolId);
+    
     const updateTool = (toolId, newData) => {
-  console.log('🟠 [CategoryPage] updateTool RECEIVED:', { 
-    page: props.page, 
-    toolId, 
-    newData,
-    timestamp: Date.now()
-  });
-  
-  // Проверяем, что newData действительно пришло
-  console.log('🟠 [CategoryPage] data keys:', Object.keys(newData));
-  
-  // Вызываем store
-  console.log('🟠 [CategoryPage] calling toolsStore.updateTool...');
-  toolsStore.updateTool(props.page, toolId, newData)
-    .then(result => {
-      console.log('🟢 [CategoryPage] updateTool resolved:', result);
-    })
-    .catch(error => {
-      console.error('🔴 [CategoryPage] updateTool error:', error);
-    });
-};
+      toolsStore.updateTool(props.page, toolId, newData)
+    };
     
     const setFilter = (filter) => {
       currentFilter.value = filter;
@@ -212,7 +197,7 @@ export default {
   animation: fadeInPage 0.25s ease;
   width: 100%;
   min-height: 400px;
-  padding-top: 70px;
+  padding-top: 0;
 }
 
 @keyframes fadeInPage {
@@ -274,7 +259,7 @@ export default {
 
 @media (max-width: 768px) {
   .category-page {
-    padding-top: 60px;
+    padding-top: 0;
   }
   
   .grid-item.wide {
@@ -284,7 +269,7 @@ export default {
 
 @media (max-width: 480px) {
   .category-page {
-    padding-top: 55px;
+    padding-top: 0;
   }
 }
 </style>
