@@ -1,36 +1,27 @@
+// filepath: /src/router/index.js
 import { createRouter, createWebHashHistory } from 'vue-router'
-import YaView from '../views/YaView.vue'
-import DomView from '../views/DomView.vue'
-import BlizkieView from '../views/BlizkieView.vue'
-import PeopleView from '../views/PeopleView.vue'
+import SpaceView from '../views/SpaceView.vue'
 import MiniAppPage from '../views/MiniAppPage.vue'
+import CatalogPage from '../views/CatalogPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory('/may-app/'),
   routes: [
     {
       path: '/',
-      redirect: '/ya'
+      redirect: '/space'
     },
     {
-      path: '/ya',
-      name: 'ya',
-      component: YaView
+      path: '/space/:id',
+      name: 'space',
+      component: SpaceView,
+      props: true
     },
     {
-      path: '/dom',
-      name: 'dom',
-      component: DomView
-    },
-    {
-      path: '/blizkie',
-      name: 'blizkie',
-      component: BlizkieView
-    },
-    {
-      path: '/people',
-      name: 'people',
-      component: PeopleView
+      path: '/catalog/:spaceId',
+      name: 'catalog',
+      component: CatalogPage,
+      props: true
     },
     {
       path: '/mini-apps/:type',

@@ -1,3 +1,4 @@
+<!-- filepath: /src/components/PinterestGrid.vue -->
 <template>
   <div class="pinterest-grid" ref="gridContainer">
     <div 
@@ -10,6 +11,13 @@
         v-for="item in column" 
         :key="item.id"
         class="grid-item"
+        :data-card-id="item.id"
+        :data-card-index="getItemIndex(item)"
+        draggable="true"
+        @dragstart="onItemDragStart($event, item)"
+        @dragend="onItemDragEnd"
+        @dragover.prevent="onItemDragOver($event, item)"
+        @drop="onItemDrop($event, item)"
       >
         <slot :name="`item-${item.id}`" :item="item">
           <div v-if="!$slots[`item-${item.id}`]" class="default-item">
@@ -33,7 +41,7 @@ export default {
     },
     minColumnWidth: {
       type: Number,
-      default: 200 /* Уменьшено для более компактных карточек */
+      default: 200
     },
     maxColumns: {
       type: Number,
@@ -44,40 +52,42 @@ export default {
       default: 16
     }
   },
+  emits: ['card-drag-start', 'card-drag-end', 'card-drop'],
   
-  setup(props) {
+  setup(props, { emit }) {
     const gridContainer = ref(null);
     const columnCount = ref(1);
     const columns = ref([]);
+    const draggedItem = ref(null);
+    const dragOverItemId = ref(null);
 
     const calculateColumnCount = () => {
       if (!gridContainer.value) return;
       const containerWidth = gridContainer.value.offsetWidth;
       
-      // Мобильные (до 480px) - 2 колонки
       if (window.innerWidth <= 480) {
         columnCount.value = 2;
       } 
-      // Маленькие планшеты (481px - 768px) - 2-3 колонки
       else if (window.innerWidth <= 768) {
         const possibleColumns = Math.floor(containerWidth / (props.minColumnWidth + props.gap));
         columnCount.value = Math.min(Math.max(possibleColumns, 2), 3);
       }
-      // Планшеты (769px - 1024px) - 3-4 колонки
       else if (window.innerWidth <= 1024) {
         const possibleColumns = Math.floor(containerWidth / (props.minColumnWidth + props.gap));
         columnCount.value = Math.min(Math.max(possibleColumns, 3), 4);
       }
-      // Десктопы (1025px - 1440px) - 4-6 колонок
       else if (window.innerWidth <= 1440) {
         const possibleColumns = Math.floor(containerWidth / (props.minColumnWidth + props.gap));
         columnCount.value = Math.min(Math.max(possibleColumns, 4), 6);
       }
-      // Широкие экраны (>1440px) - до 10 колонок
       else {
         const possibleColumns = Math.floor(containerWidth / (props.minColumnWidth + props.gap));
         columnCount.value = Math.min(possibleColumns, props.maxColumns);
       }
+    };
+
+    const getItemIndex = (item) => {
+      return props.items.findIndex(i => i.id === item.id);
     };
 
     const distributeItems = () => {
@@ -88,19 +98,49 @@ export default {
 
       const newColumns = Array.from({ length: columnCount.value }, () => []);
       
-      // Распределяем элементы по колонкам равномерно
-      props.items.forEach((item) => {
+      props.items.forEach((item, idx) => {
         if (item) {
-          // Находим колонку с наименьшим количеством элементов
-          const targetColumn = newColumns.reduce((minIndex, col, i) => {
-            return col.length < newColumns[minIndex].length ? i : minIndex;
-          }, 0);
-          
+          const targetColumn = idx % columnCount.value;
           newColumns[targetColumn].push(item);
         }
       });
       
       columns.value = newColumns;
+    };
+
+    const onItemDragStart = (event, item) => {
+      const index = getItemIndex(item);
+      draggedItem.value = { item, index };
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', JSON.stringify({
+        type: 'card',
+        sourceIndex: index,
+        cardId: item.id
+      }));
+      emit('card-drag-start', event, index, item.id);
+    };
+
+    const onItemDragEnd = (event) => {
+      draggedItem.value = null;
+      dragOverItemId.value = null;
+      emit('card-drag-end', event);
+    };
+
+    const onItemDragOver = (event, item) => {
+      event.preventDefault();
+      if (draggedItem.value && draggedItem.value.item.id !== item.id) {
+        dragOverItemId.value = item.id;
+      }
+    };
+
+    const onItemDrop = (event, item) => {
+      event.preventDefault();
+      const targetIndex = getItemIndex(item);
+      if (draggedItem.value && draggedItem.value.index !== targetIndex) {
+        emit('card-drop', event, targetIndex, item.id);
+      }
+      dragOverItemId.value = null;
+      draggedItem.value = null;
     };
 
     const handleResize = () => {
@@ -129,7 +169,12 @@ export default {
     return {
       gridContainer,
       columnCount,
-      columns
+      columns,
+      getItemIndex,
+      onItemDragStart,
+      onItemDragEnd,
+      onItemDragOver,
+      onItemDrop
     };
   }
 }
@@ -156,6 +201,12 @@ export default {
   width: 100%;
   min-width: 0;
   break-inside: avoid;
+  cursor: grab;
+  transition: transform 0.2s ease;
+}
+
+.grid-item:active {
+  cursor: grabbing;
 }
 
 .default-item {

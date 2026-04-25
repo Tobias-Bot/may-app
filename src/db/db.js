@@ -1,18 +1,16 @@
-// Открываем или создаем базу данных
 const DB_NAME = 'MindfulAppDB';
-const DB_VERSION = 1;
+const DB_VERSION = 4; // Увеличиваем версию
 
-// Хранилища (stores)
 export const STORES = {
   TOOLS: 'tools',
   MINI_APPS: 'miniApps',
   SETTINGS: 'settings',
-  BALANCE_TRACKER: 'balanceTracker'
+  BALANCE_TRACKER: 'balanceTracker',
+  SPACES: 'spaces'
 };
 
 let db = null;
 
-// Инициализация базы данных
 export const initDB = () => {
   return new Promise((resolve, reject) => {
     if (db) {
@@ -36,10 +34,10 @@ export const initDB = () => {
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       
-      // Создаем хранилище для инструментов (заметки, списки, фото)
+      // Создаем хранилище для инструментов
       if (!db.objectStoreNames.contains(STORES.TOOLS)) {
         const toolsStore = db.createObjectStore(STORES.TOOLS, { keyPath: 'id' });
-        toolsStore.createIndex('page', 'page', { unique: false });
+        toolsStore.createIndex('spaceId', 'spaceId', { unique: false });
         toolsStore.createIndex('type', 'type', { unique: false });
         toolsStore.createIndex('createdAt', 'createdAt', { unique: false });
       }
@@ -47,22 +45,27 @@ export const initDB = () => {
       // Создаем хранилище для мини-приложений
       if (!db.objectStoreNames.contains(STORES.MINI_APPS)) {
         const miniAppsStore = db.createObjectStore(STORES.MINI_APPS, { keyPath: 'id' });
-        miniAppsStore.createIndex('page', 'page', { unique: false });
+        miniAppsStore.createIndex('spaceId', 'spaceId', { unique: false });
         miniAppsStore.createIndex('type', 'type', { unique: false });
-        miniAppsStore.createIndex('createdAt', 'createdAt', { unique: false });
       }
 
-      // Создаем хранилище для настроек (только одна запись)
+      // Создаем хранилище для настроек
       if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
         db.createObjectStore(STORES.SETTINGS, { keyPath: 'id' });
       }
 
       // Создаем хранилище для трекера баланса
       if (!db.objectStoreNames.contains(STORES.BALANCE_TRACKER)) {
-        const balanceStore = db.createObjectStore(STORES.BALANCE_TRACKER, { keyPath: 'id' });
-        balanceStore.createIndex('date', 'date', { unique: false });
-        balanceStore.createIndex('month', 'month', { unique: false });
+        db.createObjectStore(STORES.BALANCE_TRACKER, { keyPath: 'id' });
       }
+
+      // Создаем хранилище для пространств
+      if (!db.objectStoreNames.contains(STORES.MINI_APPS)) {
+  const miniAppsStore = db.createObjectStore(STORES.MINI_APPS, { keyPath: 'id' });
+  miniAppsStore.createIndex('spaceId', 'spaceId', { unique: false });
+  miniAppsStore.createIndex('appId', 'appId', { unique: false });
+  miniAppsStore.createIndex('addedAt', 'addedAt', { unique: false });
+}
     };
   });
 };
@@ -71,6 +74,12 @@ export const initDB = () => {
 const withStore = async (storeName, mode, callback) => {
   const database = await initDB();
   return new Promise((resolve, reject) => {
+    // Проверяем существование хранилища
+    if (!database.objectStoreNames.contains(storeName)) {
+      reject(new Error(`Object store "${storeName}" not found`));
+      return;
+    }
+    
     const transaction = database.transaction(storeName, mode);
     const store = transaction.objectStore(storeName);
     

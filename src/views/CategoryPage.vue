@@ -1,192 +1,271 @@
+<!-- filepath: /src/views/CategoryPage.vue -->
 <template>
   <div class="category-page">
-    <!-- Фильтры-теги -->
-    <ScrollableFilters 
-      :filters="filters"
-      :current-filter="currentFilter"
-      :visible="navVisible"
-      @filter-change="setFilter"
-    />
-
-    <!-- Pinterest сетка для инструментов -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="loader"></div>
-      <p>Загрузка...</p>
+    <!-- Фильтры -->
+    <div v-if="allTools.length > 0" class="scrollable-filters">
+      <div class="filters-scroll">
+        <div class="filters-list">
+          <button 
+            v-for="filter in filters" 
+            :key="filter.value"
+            class="filter-chip"
+            :class="{ active: currentFilter === filter.value }"
+            @click="setFilter(filter.value)"
+          >
+            {{ filter.label }}
+            <span class="filter-count">{{ getFilterCount(filter.value) }}</span>
+          </button>
+        </div>
+      </div>
     </div>
     
-    <div v-else-if="filteredTools.length > 0" class="pinterest-grid-container">
-      <PinterestGrid 
-        :items="filteredTools" 
-        :min-column-width="300" 
-        :max-columns="8" 
-        :gap="16"
-      >
-        <template v-for="tool in filteredTools" :key="tool.id" #[`item-${tool.id}`]>
-  <div class="grid-item" :class="{ 'wide': tool.type === 'photo' }">
-    <CardWrapper 
-      :hide-expand="tool.type === 'photo'"
-      @delete="deleteTool(tool.id)"
-    >
-      <NoteTool 
-        v-if="tool.type === 'note'" 
-        :toolId="tool.id" 
-        :data="tool.data" 
-        @update="updateTool" 
-      />
-      <ListTool 
-        v-else-if="tool.type === 'list'" 
-        :toolId="tool.id" 
-        :data="tool.data" 
-        @update="updateTool" 
-      />
-      <PhotoTool 
-        v-else-if="tool.type === 'photo'" 
-        :toolId="tool.id" 
-        :data="tool.data" 
-        @update="updateTool" 
-      />
-      <ProgressBar 
-        v-else-if="tool.type === 'progress'" 
-        :toolId="tool.id" 
-        :data="tool.data" 
-        @update="updateTool" 
-      />
-      <TimerTool 
-        v-else-if="tool.type === 'timer'" 
-        :toolId="tool.id" 
-        :data="tool.data" 
-        @update="updateTool" 
-      />
-    </CardWrapper>
-  </div>
-</template>
-      </PinterestGrid>
+    <CreateCardModal :is-open="showCreateModal" @close="closeCreateCardModal" @create="createCard" />
+    
+    <div class="main-content">
+      <div v-if="isLoading" class="loading-state">
+        <div class="loader"></div>
+        <p>Загрузка...</p>
+      </div>
+      
+      <div v-else-if="filteredTools.length > 0" class="pinterest-grid-container">
+        <PinterestGrid 
+          ref="pinterestGrid"
+          :items="filteredTools" 
+          :min-column-width="300" 
+          :max-columns="8" 
+          :gap="16"
+          @card-drag-start="onCardDragStart"
+          @card-drag-end="onCardDragEnd"
+          @card-drop="onCardDrop"
+        >
+          <template v-for="(tool, idx) in filteredTools" :key="tool.id" #[`item-${tool.id}`]>
+            <div 
+              class="grid-item" 
+              :class="{ wide: tool.data?.expanded }"
+              :data-card-id="tool.id"
+              :data-card-index="idx"
+            >
+              <BuilderCard 
+                :toolId="tool.id" 
+                :data="tool.data" 
+                :cardIndex="idx"
+                @update="updateTool"
+                @delete="() => deleteTool(tool.id)"
+                @edit="openCardEditor"
+              />
+            </div>
+          </template>
+        </PinterestGrid>
+      </div>
+      <div v-else class="empty-state">
+        <p>Нажмите на кнопку с карандашом, чтобы создать карточку</p>
+      </div>
     </div>
-    <div v-else class="empty-state">
-      <p>Нажмите на кнопку с карандашом, чтобы добавить заметку, список, фото, прогресс или таймер</p>
-    </div>
+    
+    <!-- Редактор карточки -->
+    <CardEditorPage
+      v-if="editorCard"
+      :card-id="editorCard.toolId"
+      :card-data="editorCard.data"
+      :space-id="page"
+      @close="closeCardEditor"
+      @update="updateCardFromEditor"
+      @delete="deleteCardFromEditor"
+    />
   </div>
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import ScrollableFilters from '../components/ScrollableFilters.vue';
-import CardWrapper from '../components/CardWrapper.vue';
-import NoteTool from '../components/tools/NoteTool.vue';
-import ListTool from '../components/tools/ListTool.vue';
-import PhotoTool from '../components/tools/PhotoTool.vue';
-import ProgressBar from '../components/tools/ProgressBar.vue';
-import TimerTool from '../components/tools/TimerTool.vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
+import BuilderCard from '../components/BuilderCard/index.vue';
+import CreateCardModal from '../components/modals/CreateCardModal.vue';
+import CardEditorPage from '../views/CardEditorPage.vue';
 import PinterestGrid from '../components/PinterestGrid.vue';
 import { toolsStore } from '../stores/toolsStore';
+import { spacesStore } from '../stores/spacesStore';
 
 export default {
   name: 'CategoryPage',
   components: {
-    ScrollableFilters,
-    CardWrapper,
-    NoteTool,
-    ListTool,
-    PhotoTool,
-    ProgressBar,
-    TimerTool,
+    BuilderCard,
+    CreateCardModal,
+    CardEditorPage,
     PinterestGrid
   },
-  props: {
-    page: {
-      type: String,
-      required: true,
-      validator: (value) => ['ya', 'dom', 'blizkie', 'people'].includes(value)
-    }
-  },
+  props: { page: { type: String, required: true } },
   
   setup(props) {
     const allTools = ref([]);
     const isLoading = ref(true);
     const currentFilter = ref('all');
-    const navVisible = ref(true);
-    let lastScrollTop = 0;
-    const scrollThreshold = 10;
-
+    const showCreateModal = ref(false);
+    const editorCard = ref(null);
+    const pinterestGrid = ref(null);
+    let unsubscribeTools = null;
+    let unsubscribeSpaces = null;
+    
+    const hasPhoto = (tool) => tool.data?.blocks?.some(block => block.type === 'photo' && block.data?.image);
+    const hasText = (tool) => tool.data?.blocks?.some(block => block.type === 'text' && block.data?.content?.trim());
+    const hasTimer = (tool) => tool.data?.blocks?.some(block => block.type === 'timer');
+    const hasProgress = (tool) => tool.data?.blocks?.some(block => block.type === 'progress');
+    const hasList = (tool) => tool.data?.blocks?.some(block => block.type === 'listItem');
+    
     const filters = [
       { label: 'Все', value: 'all' },
-      { label: 'Заметки', value: 'note' },
-      { label: 'Списки', value: 'list' },
+      { label: 'Важные', value: 'important' },
       { label: 'Фото', value: 'photo' },
+      { label: 'Текст', value: 'text' },
+      { label: 'Таймер', value: 'timer' },
       { label: 'Прогресс', value: 'progress' },
-      { label: 'Таймеры', value: 'timer' }
+      { label: 'Список', value: 'list' }
     ];
-
+    
+    const getFilterCount = (filterValue) => {
+      if (filterValue === 'all') return allTools.value.length;
+      return allTools.value.filter(tool => {
+        if (filterValue === 'important') return tool.data?.important === true;
+        if (filterValue === 'photo') return hasPhoto(tool);
+        if (filterValue === 'text') return hasText(tool);
+        if (filterValue === 'timer') return hasTimer(tool);
+        if (filterValue === 'progress') return hasProgress(tool);
+        if (filterValue === 'list') return hasList(tool);
+        return false;
+      }).length;
+    };
+    
     const filteredTools = computed(() => {
-      if (currentFilter.value === 'all') {
-        return allTools.value;
-      }
-      return allTools.value.filter(tool => tool.type === currentFilter.value);
+      if (currentFilter.value === 'all') return allTools.value;
+      return allTools.value.filter(tool => {
+        if (currentFilter.value === 'important') return tool.data?.important === true;
+        if (currentFilter.value === 'photo') return hasPhoto(tool);
+        if (currentFilter.value === 'text') return hasText(tool);
+        if (currentFilter.value === 'timer') return hasTimer(tool);
+        if (currentFilter.value === 'progress') return hasProgress(tool);
+        if (currentFilter.value === 'list') return hasList(tool);
+        return false;
+      });
     });
-
-    const loadTools = () => { 
-      const loadedTools = toolsStore.getTools(props.page);
-      console.log(`Tools loaded for ${props.page}:`, loadedTools);
-      allTools.value = [...loadedTools]; 
+    
+    const loadTools = () => {
+      const spaceId = props.page;
+      const loadedTools = toolsStore.getTools(spaceId);
+      allTools.value = [...loadedTools];
     };
     
     const initialize = async () => {
-      console.log(`Initializing ${props.page} view...`);
       await toolsStore.ready();
+      await spacesStore.ready();
       loadTools();
       isLoading.value = false;
     };
-
-    const handleScroll = () => {
-      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-      
-      if (Math.abs(currentScroll - lastScrollTop) <= scrollThreshold) {
-        return;
-      }
-
-      if (currentScroll > lastScrollTop && currentScroll > 50) {
-        navVisible.value = false;
-      } else {
-        navVisible.value = true;
-      }
-      
-      lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+    
+    const setFilter = (filter) => { currentFilter.value = filter; };
+    const openCreateCardModal = () => { showCreateModal.value = true; };
+    const closeCreateCardModal = () => { showCreateModal.value = false; };
+    
+    const createCard = async (cardData) => {
+      const spaceId = props.page;
+      await toolsStore.addTool(spaceId, cardData);
+      closeCreateCardModal();
     };
+    
+    const deleteTool = async (toolId) => {
+      const spaceId = props.page;
+      await toolsStore.deleteTool(spaceId, toolId);
+      loadTools();
+    };
+    
+    const updateTool = async (toolId, newData) => {
+      const spaceId = props.page;
+      await toolsStore.updateTool(spaceId, toolId, newData);
+      loadTools();
+    };
+    
+    const openCardEditor = (card) => {
+      editorCard.value = card;
+    };
+    
+    const closeCardEditor = () => {
+      editorCard.value = null;
+    };
+    
+    const updateCardFromEditor = async (newData) => {
+      if (editorCard.value) {
+        await updateTool(editorCard.value.toolId, { data: newData });
+        editorCard.value = {
+          ...editorCard.value,
+          data: newData
+        };
+      }
+    };
+    
+    const deleteCardFromEditor = async () => {
+      if (editorCard.value) {
+        await deleteTool(editorCard.value.toolId);
+        closeCardEditor();
+      }
+    };
+    
+    // Drag and drop для карточек
+    const onCardDragStart = (event, index, cardId) => {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', JSON.stringify({
+        type: 'card',
+        sourceIndex: index,
+        cardId: cardId
+      }));
+    };
+    
+    const onCardDragEnd = () => {
+      // Можно добавить визуальное сброс
+    };
+    
+    const onCardDrop = async (event, targetIndex, targetCardId) => {
+      event.preventDefault();
+      
+      const draggedData = event.dataTransfer.getData('text/plain');
+      if (!draggedData) return;
+      
+      const { sourceIndex, cardId } = JSON.parse(draggedData);
+      
+      if (sourceIndex === targetIndex) return;
+      
+      // Создаём новый массив карточек
+      const currentTools = [...allTools.value];
+      const [movedTool] = currentTools.splice(sourceIndex, 1);
+      currentTools.splice(targetIndex, 0, movedTool);
+      
+      // Обновляем состояние
+      allTools.value = currentTools;
+      
+      // Сохраняем порядок в БД
+      for (let i = 0; i < currentTools.length; i++) {
+        await toolsStore.updateTool(props.page, currentTools[i].id, { data: { ...currentTools[i].data, order: i } });
+      }
+    };
+    
+    watch(() => props.page, () => { loadTools(); });
     
     onMounted(() => {
       initialize();
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      
-      const unsubscribe = toolsStore.subscribe(() => { 
-        console.log(`Tools store changed for ${props.page}, reloading...`);
-        loadTools(); 
-      });
-      
-      onUnmounted(() => {
-        unsubscribe();
-        window.removeEventListener('scroll', handleScroll);
-      });
+      window.addEventListener('open-create-card-modal', openCreateCardModal);
+      unsubscribeTools = toolsStore.subscribe(() => loadTools());
+      unsubscribeSpaces = spacesStore.subscribe(() => loadTools());
     });
     
-    const deleteTool = (toolId) => toolsStore.deleteTool(props.page, toolId);
-    
-    const updateTool = (toolId, newData) => {
-      toolsStore.updateTool(props.page, toolId, newData)
-    };
-    
-    const setFilter = (filter) => {
-      currentFilter.value = filter;
-    };
+    onUnmounted(() => {
+      if (unsubscribeTools) unsubscribeTools();
+      if (unsubscribeSpaces) unsubscribeSpaces();
+      window.removeEventListener('open-create-card-modal', openCreateCardModal);
+    });
     
     return { 
-      filteredTools,
-      isLoading,
-      filters,
-      currentFilter,
-      navVisible,
-      deleteTool, 
-      updateTool,
-      setFilter
+      allTools, filteredTools, isLoading, filters, currentFilter, showCreateModal, editorCard,
+      pinterestGrid,
+      deleteTool, updateTool, setFilter, getFilterCount, 
+      openCreateCardModal, closeCreateCardModal, createCard,
+      openCardEditor, closeCardEditor, updateCardFromEditor, deleteCardFromEditor,
+      onCardDragStart, onCardDragEnd, onCardDrop
     };
   }
 }
@@ -198,11 +277,69 @@ export default {
   width: 100%;
   min-height: 400px;
   padding-top: 0;
+  padding-bottom: 120px;
 }
 
 @keyframes fadeInPage {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.scrollable-filters {
+  margin-bottom: 1rem;
+}
+
+.filters-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.filters-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filters-list {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(26, 59, 59, 0.1);
+  border-radius: 30px;
+  color: #5a6a6a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: #1a3b3b;
+}
+
+.filter-chip.active {
+  background: #1a3b3b;
+  color: white;
+  border-color: #1a3b3b;
+}
+
+.filter-count {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.main-content {
+  width: 100%;
 }
 
 .loading-state {
@@ -230,16 +367,11 @@ export default {
 
 .pinterest-grid-container {
   width: 100%;
-  margin-top: 0.5rem;
 }
 
 .grid-item {
   width: 100%;
   height: fit-content;
-}
-
-.grid-item.wide {
-  grid-column: span 2;
 }
 
 .empty-state {
@@ -258,18 +390,16 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .category-page {
-    padding-top: 0;
-  }
-  
-  .grid-item.wide {
-    grid-column: span 1;
+  .filter-chip {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
   }
 }
 
 @media (max-width: 480px) {
-  .category-page {
-    padding-top: 0;
+  .filter-chip {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
   }
 }
 </style>

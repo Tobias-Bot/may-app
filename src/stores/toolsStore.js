@@ -1,25 +1,16 @@
 import { ref } from 'vue';
 import { STORES, getAll, add, update, remove, initDB } from '../db/db';
 
-// Кэш для быстрого доступа
-const cache = ref({
-  ya: [],
-  dom: [],
-  blizkie: [],
-  people: []
-});
+// Кэш для быстрого доступа - теперь по spaceId
+const cache = ref({});
 
-// Флаг инициализации
 let isInitialized = false;
 const initPromise = new Promise((resolve) => {
-  // Будет разрешен после загрузки данных
   window.resolveToolsInit = resolve;
 });
 
-// Подписчики на изменения
 const subscribers = [];
 
-// Функция для сжатия изображения
 const compressImage = (base64Data, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
   return new Promise((resolve) => {
     const img = new Image();
@@ -50,8 +41,7 @@ const compressImage = (base64Data, maxWidth = 800, maxHeight = 800, quality = 0.
       
       let compressed = canvas.toDataURL('image/jpeg', quality);
       
-      // Если всё ещё слишком большой, уменьшаем качество
-      const MAX_IMAGE_SIZE = 500 * 1024; // 500KB
+      const MAX_IMAGE_SIZE = 500 * 1024;
       while (compressed.length > MAX_IMAGE_SIZE && quality > 0.1) {
         quality -= 0.1;
         compressed = canvas.toDataURL('image/jpeg', quality);
@@ -62,58 +52,48 @@ const compressImage = (base64Data, maxWidth = 800, maxHeight = 800, quality = 0.
   });
 };
 
-// Загрузка всех данных при инициализации
 const loadAllData = async () => {
   try {
     await initDB();
-    
-    // Загружаем инструменты для всех страниц
     const allTools = await getAll(STORES.TOOLS);
     
-    // Группируем по страницам
-    cache.value = {
-      ya: allTools.filter(t => t.page === 'ya').sort((a, b) => 
-        new Date(b.createdAt) - new Date(a.createdAt)
-      ),
-      dom: allTools.filter(t => t.page === 'dom').sort((a, b) => 
-        new Date(b.createdAt) - new Date(a.createdAt)
-      ),
-      blizkie: allTools.filter(t => t.page === 'blizkie').sort((a, b) => 
-        new Date(b.createdAt) - new Date(a.createdAt)
-      ),
-      people: allTools.filter(t => t.page === 'people').sort((a, b) => 
-        new Date(b.createdAt) - new Date(a.createdAt)
-      )
-    };
+    // Группируем по spaceId
+    const grouped = {};
+    for (const tool of allTools) {
+      const spaceId = tool.spaceId;
+      if (!grouped[spaceId]) grouped[spaceId] = [];
+      grouped[spaceId].push(tool);
+    }
     
+    // Сортируем каждую группу по дате создания
+    for (const spaceId in grouped) {
+      grouped[spaceId].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+    
+    cache.value = grouped;
     console.log('Tools data loaded from IndexedDB', cache.value);
     isInitialized = true;
     window.resolveToolsInit();
   } catch (e) {
     console.error('Failed to load data from IndexedDB', e);
-    window.resolveToolsInit(); // Все равно разрешаем, чтобы не блокировать
+    window.resolveToolsInit();
   }
 };
 
-// Инициализация при загрузке модуля
 loadAllData();
 
 export const toolsStore = {
-  // Дождаться инициализации
   async ready() {
     await initPromise;
     return this;
   },
 
-  // Получить инструменты для страницы
-  getTools(page) {
-    return cache.value[page] || [];
+  getTools(spaceId) {
+    return cache.value[spaceId] || [];
   },
 
-  // Добавить инструмент
-  async addTool(page, toolData) {
+  async addTool(spaceId, toolData) {
     try {
-      // Сжимаем изображение, если оно есть
       let processedData = { ...toolData.data };
       if (toolData.data.image) {
         try {
@@ -125,19 +105,17 @@ export const toolsStore = {
       
       const newTool = {
         id: Date.now() + Math.random().toString(36).substr(2, 9),
-        page: page,
+        spaceId: spaceId,
         type: toolData.type,
         data: processedData,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       
-      // Сохраняем в IndexedDB
       await add(STORES.TOOLS, newTool);
       
-      // Обновляем кэш
-      if (!cache.value[page]) cache.value[page] = [];
-      cache.value[page].unshift(newTool);
+      if (!cache.value[spaceId]) cache.value[spaceId] = [];
+      cache.value[spaceId].unshift(newTool);
       
       this._notify();
       return newTool;
@@ -147,87 +125,63 @@ export const toolsStore = {
     }
   },
 
-// Обновить инструмент
-async updateTool(page, toolId, newData) {
-  try {
-    console.log('toolsStore: updateTool called', { page, toolId, newData });
-    
-    const index = cache.value[page].findIndex(tool => tool.id === toolId);
-    if (index !== -1) {
-      // Получаем текущие данные
-      const currentTool = cache.value[page][index];
-      
-      // Извлекаем данные в зависимости от формата
-      let updatedFields;
-      if (newData.data) {
-        // Формат: { data: { ... } }
-        updatedFields = newData.data;
-      } else {
-        // Формат: прямые поля
-        updatedFields = newData;
-      }
-      
-      console.log('toolsStore: updatedFields', updatedFields);
-      
-      // Создаем чистую копию новых данных
-      const cleanNewData = JSON.parse(JSON.stringify(updatedFields));
-      
-      // Создаем обновленный инструмент
-      const updatedTool = {
-        id: toolId,
-        page: page,
-        type: currentTool.type,
-        data: {
-          ...currentTool.data,
-          ...cleanNewData
-        },
-        createdAt: currentTool.createdAt,
-        updatedAt: new Date().toISOString()
-      };
-      
-      console.log('toolsStore: updatedTool before compression', updatedTool);
-      
-      // Сжимаем изображение, если оно есть и изменилось
-      if (updatedTool.data.image && updatedTool.data.image !== currentTool.data?.image) {
-        try {
-          updatedTool.data.image = await compressImage(updatedTool.data.image);
-          console.log('toolsStore: image compressed');
-        } catch (e) {
-          console.error('Failed to compress image', e);
-        }
-      }
-      
-      console.log('toolsStore: saving to IndexedDB', updatedTool);
-      
-      // Очищаем от возможных reactive прокси перед сохранением
-      const toolToSave = JSON.parse(JSON.stringify(updatedTool));
-      
-      // Сохраняем в IndexedDB
-      await update(STORES.TOOLS, toolToSave);
-      
-      // Обновляем кэш
-      cache.value[page][index] = updatedTool;
-      
-      console.log('toolsStore: update successful');
-      this._notify();
-      return updatedTool;
-    }
-    console.log('toolsStore: tool not found');
-    return null;
-  } catch (e) {
-    console.error('Failed to update tool in IndexedDB', e);
-    throw e;
-  }
-},
-
-  // Удалить инструмент
-  async deleteTool(page, toolId) {
+  async updateTool(spaceId, toolId, newData) {
     try {
-      // Удаляем из IndexedDB
+      const tools = cache.value[spaceId];
+      if (!tools) return null;
+      
+      const index = tools.findIndex(tool => tool.id === toolId);
+      if (index !== -1) {
+        const currentTool = tools[index];
+        
+        let updatedFields;
+        if (newData.data) {
+          updatedFields = newData.data;
+        } else {
+          updatedFields = newData;
+        }
+        
+        const cleanNewData = JSON.parse(JSON.stringify(updatedFields));
+        
+        const updatedTool = {
+          ...currentTool,
+          data: {
+            ...currentTool.data,
+            ...cleanNewData
+          },
+          updatedAt: new Date().toISOString()
+        };
+        
+        if (updatedTool.data.image && updatedTool.data.image !== currentTool.data?.image) {
+          try {
+            updatedTool.data.image = await compressImage(updatedTool.data.image);
+          } catch (e) {
+            console.error('Failed to compress image', e);
+          }
+        }
+        
+        const toolToSave = JSON.parse(JSON.stringify(updatedTool));
+        await update(STORES.TOOLS, toolToSave);
+        
+        cache.value[spaceId][index] = updatedTool;
+        
+        this._notify();
+        return updatedTool;
+      }
+      return null;
+    } catch (e) {
+      console.error('Failed to update tool in IndexedDB', e);
+      throw e;
+    }
+  },
+
+  async deleteTool(spaceId, toolId) {
+    try {
       await remove(STORES.TOOLS, toolId);
       
-      // Обновляем кэш
-      cache.value[page] = cache.value[page].filter(tool => tool.id !== toolId);
+      if (cache.value[spaceId]) {
+        cache.value[spaceId] = cache.value[spaceId].filter(tool => tool.id !== toolId);
+      }
       
       this._notify();
     } catch (e) {
@@ -236,7 +190,6 @@ async updateTool(page, toolId, newData) {
     }
   },
 
-  // Подписка на изменения
   subscribe(callback) {
     subscribers.push(callback);
     return () => {
